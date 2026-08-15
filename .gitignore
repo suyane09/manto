@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+backend/node_modules/
+backend/.env
+backend/uploads/
+backend/data/
+*.bak
+*.bak2
+*.backup
+src-backup-antes-encoding/
