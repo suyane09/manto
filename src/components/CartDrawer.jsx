@@ -6,19 +6,18 @@ import {
   Minus,
   Trash2,
   ShoppingBag,
-  Truck,
   MapPin,
-  Loader2,
   ChevronLeft,
-  CreditCard,
+  MessageCircle,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { formatBRL } from "@/lib/config";
-import api from "@/lib/api";
-import customerApi, { CUSTOMER_TOKEN_KEY } from "@/lib/customerApi";
 
-const STEPS = { CART: "cart", SHIPPING: "shipping", ADDRESS: "address" };
+// Número do WhatsApp que recebe os pedidos (DDI + DDD + número, só dígitos)
+const WHATSAPP_NUMBER = "5582996270952";
+
+const STEPS = { CART: "cart", DETAILS: "details" };
 
 export default function CartDrawer() {
   const {
@@ -33,30 +32,23 @@ export default function CartDrawer() {
     totalPrice,
   } = useCart();
 
-  const { customer, token: customerToken, isAuthenticated } = useCustomerAuth();
+  const { customer, isAuthenticated } = useCustomerAuth();
 
   const [step, setStep] = useState(STEPS.CART);
-  const [cep, setCep] = useState(() => (isAuthenticated ? customer?.cep || "" : ""));
-  const [shipping, setShipping] = useState(null);
-  const [shippingLoading, setShippingLoading] = useState(false);
-  const [shippingError, setShippingError] = useState("");
 
   const [form, setForm] = useState({
     name: isAuthenticated ? customer?.name || "" : "",
     phone: isAuthenticated ? customer?.phone || "" : "",
-    email: isAuthenticated ? customer?.email || "" : "",
+    street: isAuthenticated ? customer?.street || "" : "",
     number: isAuthenticated ? customer?.number || "" : "",
     complement: isAuthenticated ? customer?.complement || "" : "",
+    neighborhood: isAuthenticated ? customer?.neighborhood || "" : "",
+    city: isAuthenticated ? customer?.city || "" : "",
+    uf: isAuthenticated ? customer?.uf || "" : "",
   });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
 
   function resetCheckout() {
     setStep(STEPS.CART);
-    setCep(isAuthenticated ? customer?.cep || "" : "");
-    setShipping(null);
-    setShippingError("");
-    setSubmitError("");
   }
 
   function handleClose() {
@@ -65,75 +57,49 @@ export default function CartDrawer() {
     setTimeout(resetCheckout, 300);
   }
 
-  async function calculateShipping(e) {
-    e.preventDefault();
-    setShippingError("");
-    setShippingLoading(true);
-    try {
-      const { data } = await api.post("/shipping/calculate", {
-        cep,
-        itemCount: totalCount,
-      });
-      setShipping(data);
-    } catch (err) {
-      setShippingError(err?.response?.data?.error || "Não foi possível calcular o frete.");
-      setShipping(null);
-    } finally {
-      setShippingLoading(false);
+  function buildWhatsAppMessage() {
+    const lines = [];
+    lines.push("Olá! Quero fazer o seguinte pedido:");
+    lines.push("");
+
+    items.forEach((it) => {
+      let line = `• ${it.qty}x ${it.name} (Tam: ${it.size})`;
+      if (it.customName) {
+        line += ` - ${it.customName}${it.customNumber ? " #" + it.customNumber : ""}`;
+      }
+      line += ` - ${formatBRL(it.qty * it.price)}`;
+      lines.push(line);
+    });
+
+    lines.push("");
+    lines.push(`Total: ${formatBRL(totalPrice)}`);
+    lines.push("");
+    lines.push(`Nome: ${form.name}`);
+    lines.push(`Telefone: ${form.phone}`);
+
+    const hasAddress = form.street || form.city;
+    if (hasAddress) {
+      lines.push("");
+      lines.push("Endereço para entrega:");
+      lines.push(
+        `${form.street}${form.number ? ", " + form.number : ""}${
+          form.complement ? " - " + form.complement : ""
+        }`
+      );
+      lines.push(`${form.neighborhood ? form.neighborhood + " - " : ""}${form.city}/${form.uf}`);
     }
+
+    return lines.join("\n");
   }
 
-  async function handleCheckout(e) {
+  function handleSendWhatsApp(e) {
     e.preventDefault();
-    if (!shipping) return;
-    setSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const token = customerToken || localStorage.getItem(CUSTOMER_TOKEN_KEY);
-      const { data } = await customerApi.post(
-        "/payments/create-preference",
-        {
-          customerName: form.name,
-          customerPhone: form.phone,
-          customerEmail: form.email,
-          cep: shipping.cep,
-          street: shipping.street,
-          number: form.number,
-          complement: form.complement,
-          neighborhood: shipping.neighborhood,
-          city: shipping.city,
-          uf: shipping.uf,
-          shippingCost: shipping.cost,
-          shippingDaysMin: shipping.daysMin,
-          shippingDaysMax: shipping.daysMax,
-          items: items.map((it) => ({
-            id: it.id,
-            name: it.name,
-            size: it.size,
-            customName: it.customName,
-            customNumber: it.customNumber,
-            qty: it.qty,
-            price: it.price,
-          })),
-        },
-        token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
-      );
-
-      const redirectUrl = data.initPoint || data.sandboxInitPoint;
-      if (!redirectUrl) throw new Error("Link de pagamento não retornado.");
-
-      clear();
-      window.location.href = redirectUrl;
-    } catch (err) {
-      setSubmitError(
-        err?.response?.data?.error || "Não foi possível iniciar o pagamento. Tente novamente."
-      );
-      setSubmitting(false);
-    }
+    const message = buildWhatsAppMessage();
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+    clear();
+    handleClose();
   }
-
-  const grandTotal = totalPrice + (shipping?.cost || 0);
 
   return (
     <AnimatePresence>
@@ -157,7 +123,7 @@ export default function CartDrawer() {
               <div className="flex items-center gap-2">
                 {step !== STEPS.CART && (
                   <button
-                    onClick={() => setStep(step === STEPS.ADDRESS ? STEPS.SHIPPING : STEPS.CART)}
+                    onClick={() => setStep(STEPS.CART)}
                     className="rounded-full p-1.5 text-white hover:bg-muted"
                     aria-label="Voltar"
                   >
@@ -167,8 +133,7 @@ export default function CartDrawer() {
                 <div>
                   <p className="font-heading text-lg uppercase tracking-wide text-white">
                     {step === STEPS.CART && "Pedido Tático"}
-                    {step === STEPS.SHIPPING && "Entrega"}
-                    {step === STEPS.ADDRESS && "Seus dados"}
+                    {step === STEPS.DETAILS && "Seus dados"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {totalCount} {totalCount === 1 ? "item" : "itens"}
@@ -249,86 +214,8 @@ export default function CartDrawer() {
                     </li>
                   ))}
                 </ul>
-              ) : step === STEPS.SHIPPING ? (
-                <form onSubmit={calculateShipping} className="space-y-4">
-                  <div>
-                    <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <MapPin className="h-3.5 w-3.5" />
-                      CEP de entrega
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        className="input flex-1"
-                        placeholder="00000-000"
-                        value={cep}
-                        onChange={(e) => setCep(e.target.value)}
-                        maxLength={9}
-                        required
-                      />
-                      <button
-                        type="submit"
-                        disabled={shippingLoading}
-                        className="flex items-center justify-center gap-1.5 rounded-lg bg-neon px-4 text-xs font-bold uppercase tracking-wide text-black disabled:opacity-60"
-                      >
-                        {shippingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Calcular"}
-                      </button>
-                    </div>
-                    <p className="mt-1.5 text-[11px] text-muted-foreground">
-                      Não sabe seu CEP?{" "}
-                      <a
-                        href="https://buscacepinter.correios.com.br/app/endereco/index.php"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline hover:text-neon"
-                      >
-                        Consultar nos Correios
-                      </a>
-                    </p>
-                  </div>
-
-                  {shippingError && (
-                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                      {shippingError}
-                    </p>
-                  )}
-
-                  {shipping && (
-                    <div className="space-y-3 rounded-lg border border-neon/30 bg-neon/5 p-4">
-                      <div className="flex items-center gap-2 text-sm text-white">
-                        <Truck className="h-4 w-4 text-neon" />
-                        <span>
-                          {shipping.city} / {shipping.uf}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Frete estimado</span>
-                        <span className="font-bold text-neon">{formatBRL(shipping.cost)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Prazo estimado</span>
-                        <span>
-                          {shipping.daysMin}–{shipping.daysMax} dias úteis
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setStep(STEPS.ADDRESS)}
-                        className="w-full rounded-lg bg-neon py-3 text-xs font-bold uppercase tracking-wide text-black"
-                      >
-                        Continuar
-                      </button>
-                    </div>
-                  )}
-                </form>
               ) : (
-                <form onSubmit={handleCheckout} className="space-y-4">
-                  <div className="rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
-                    Entregando em <span className="text-white">{shipping.street}, {shipping.neighborhood}</span>
-                    <br />
-                    {shipping.city} / {shipping.uf} — {shipping.cep}
-                  </div>
-
+                <form onSubmit={handleSendWhatsApp} className="space-y-4">
                   <Field label="Nome completo">
                     <input
                       className="input"
@@ -348,52 +235,70 @@ export default function CartDrawer() {
                     />
                   </Field>
 
-                  <Field label="E-mail (opcional)">
-                    <input
-                      type="email"
-                      className="input"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    />
-                  </Field>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="Número">
-                      <input
-                        className="input"
-                        required
-                        value={form.number}
-                        onChange={(e) => setForm({ ...form, number: e.target.value })}
-                      />
-                    </Field>
-                    <Field label="Complemento">
-                      <input
-                        className="input"
-                        value={form.complement}
-                        onChange={(e) => setForm({ ...form, complement: e.target.value })}
-                      />
-                    </Field>
-                  </div>
-
-                  {submitError && (
-                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                      {submitError}
+                  <div className="space-y-3 rounded-lg border border-border bg-background/50 p-3">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Endereço para entrega (opcional)
                     </p>
-                  )}
+
+                    <Field label="Rua">
+                      <input
+                        className="input"
+                        value={form.street}
+                        onChange={(e) => setForm({ ...form, street: e.target.value })}
+                      />
+                    </Field>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Número">
+                        <input
+                          className="input"
+                          value={form.number}
+                          onChange={(e) => setForm({ ...form, number: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Complemento">
+                        <input
+                          className="input"
+                          value={form.complement}
+                          onChange={(e) => setForm({ ...form, complement: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+
+                    <Field label="Bairro">
+                      <input
+                        className="input"
+                        value={form.neighborhood}
+                        onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
+                      />
+                    </Field>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Cidade">
+                        <input
+                          className="input"
+                          value={form.city}
+                          onChange={(e) => setForm({ ...form, city: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="UF">
+                        <input
+                          className="input"
+                          maxLength={2}
+                          value={form.uf}
+                          onChange={(e) => setForm({ ...form, uf: e.target.value })}
+                        />
+                      </Field>
+                    </div>
+                  </div>
 
                   <button
                     type="submit"
-                    disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-neon py-4 font-black uppercase tracking-wide text-black transition-transform hover:scale-[1.01] active:scale-95 disabled:opacity-60"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-neon py-4 font-black uppercase tracking-wide text-black transition-transform hover:scale-[1.01] active:scale-95"
                   >
-                    {submitting ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <CreditCard className="h-5 w-5" />
-                        Ir para pagamento
-                      </>
-                    )}
+                    <MessageCircle className="h-5 w-5" />
+                    Finalizar pelo WhatsApp
                   </button>
                 </form>
               )}
@@ -401,30 +306,20 @@ export default function CartDrawer() {
 
             {items.length > 0 && (
               <footer className="border-t border-border p-5">
-                <div className="mb-1 flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Produtos</span>
-                  <span>{formatBRL(totalPrice)}</span>
-                </div>
-                {shipping && (
-                  <div className="mb-1 flex items-center justify-between text-sm text-muted-foreground">
-                    <span>Frete</span>
-                    <span>{formatBRL(shipping.cost)}</span>
-                  </div>
-                )}
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-sm uppercase tracking-wider text-muted-foreground">Total</span>
                   <span className="font-heading text-2xl tracking-wide text-white">
-                    {formatBRL(grandTotal)}
+                    {formatBRL(totalPrice)}
                   </span>
                 </div>
 
                 {step === STEPS.CART && (
                   <button
-                    onClick={() => setStep(STEPS.SHIPPING)}
+                    onClick={() => setStep(STEPS.DETAILS)}
                     className="flex w-full items-center justify-center gap-2 rounded-md bg-neon py-4 font-black uppercase tracking-wide text-black transition-transform hover:scale-[1.01] active:scale-95"
                   >
-                    <Truck className="h-5 w-5" />
-                    Calcular frete
+                    <MessageCircle className="h-5 w-5" />
+                    Finalizar pelo WhatsApp
                   </button>
                 )}
 
@@ -455,6 +350,3 @@ function Field({ label, children }) {
     </div>
   );
 }
-
-
-

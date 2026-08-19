@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Pencil, Trash2, X, Search, Loader2, ImagePlus, ImageOff } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Search, Loader2, ImagePlus, ImageOff, TriangleAlert } from "lucide-react";
 import api from "@/lib/api";
 import { formatBRL } from "@/lib/config";
 
@@ -33,6 +33,8 @@ function Produtos() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const fileInputRef = useRef(null);
 
   function loadProducts() {
@@ -124,13 +126,22 @@ function Produtos() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm("Remover este produto? Essa ação não pode ser desfeita.")) return;
+  function handleDelete(product) {
+    setDeleteTarget(product);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await api.delete(`/products/${id}`);
+      await api.delete(`/products/${deleteTarget.id}`);
       loadProducts();
+      setDeleteTarget(null);
     } catch {
       setError("Erro ao remover produto.");
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -226,7 +237,7 @@ function Produtos() {
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(p.id)}
+                        onClick={() => handleDelete(p)}
                         className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
                         aria-label="Excluir"
                       >
@@ -398,6 +409,52 @@ function Produtos() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => !deleting && setDeleteTarget(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl border border-destructive/30 bg-card p-7"
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <TriangleAlert className="h-5 w-5" />
+              </div>
+              <h2 className="font-heading text-base uppercase tracking-wide text-white">
+                Remover produto
+              </h2>
+            </div>
+
+            <p className="mb-6 text-sm text-muted-foreground">
+              Tem certeza que deseja remover{" "}
+              <span className="font-semibold text-white">{deleteTarget.name}</span>? Essa ação não pode ser desfeita.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-border py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-white disabled:opacity-60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-destructive py-2.5 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-60"
+              >
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {deleting ? "Removendo..." : "Remover"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,5 @@
 import { Router } from "express";
-import { all, get, run } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
+import { all, get, run, insertAndGetId } from "../db.js";import { requireAuth } from "../middleware/auth.js";
 import { sendMail } from "../utils/mailer.js";
 
 const router = Router();
@@ -150,5 +149,55 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
 
   res.json(updated);
 });
+// POST /api/orders/manual - registra uma venda fechada fora do sistema (WhatsApp).
+// Sem frete e sem forma de pagamento: entra direto como concluída e aprovada,
+// só pra manter estoque e estatísticas (mais vendidos, faturamento) corretos.
+router.post("/manual", requireAuth, async (req, res) => {
+  const { items, customerName = "" } = req.body || {};
 
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "Informe ao menos um produto vendido." });
+  }
+
+  const resolvedItems = [];
+  for (const it of items) {
+    const qty = Math.max(1, Number(it.qty) || 1);
+    const product = await get("SELECT * FROM products WHERE id = ?", [it.productId]);
+    if (!product) {
+      return res.status(404).json({ error: `Produto não encontrado: ${it.productId}` });
+    }
+    resolvedItems.push({
+      id: product.id,
+      name: product.name,
+      type: product.type,
+      stock: product.stock,
+      qty,
+      price: Number(product.price) || 0,
+    });
+  }
+
+  const total = resolvedItems.reduce((sum, it) => sum + it.price * it.qty, 0);
+
+  const orderId = await insertAndGetId(
+    `INSERT INTO orders (customer_name, shipping_cost, subtotal, total, status, payment_status, payment_method)
+     VALUES (?, 0, ?, ?, 'concluido', 'aprovado', 'whatsapp')`,
+    [customerName || "Venda WhatsApp", total, total]
+  );
+
+  for (const it of resolvedItems) {
+    await run(
+      `INSERT INTO order_items (order_id, product_id, product_name, qty, unit_price, subtotal)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [orderId, it.id, it.name, it.qty, it.price, it.price * it.qty]
+    );
+
+    if (it.type !== "encomenda") {
+      const newStock = Math.max(0, (it.stock || 0) - it.qty);
+      await run("UPDATE products SET stock = ? WHERE id = ?", [newStock, it.id]);
+    }
+  }
+
+  const created = await get("SELECT * FROM orders WHERE id = ?", [orderId]);
+  res.status(201).json(created);
+});
 export default router;

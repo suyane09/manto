@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Zap, PencilRuler, ArrowRight } from "lucide-react";
 
-const HERO_PRONTA = "https://i.pinimg.com/1200x/ef/6a/f3/ef6af34771847685ccd3db2688dcdd7f.jpg";
+const HERO_PRONTA = "/hero-pronta.png";
 const HERO_ENCOMENDA = "https://otempo.scene7.com/is/image/sempreeditora/futebol%20internacional-camisas%20copa%202026-copa_2026-adidas-1762364496?qlt=90&ts=1762364586341&dpr=off";
 
 function Panel({ side, active, setActive, badge, title, desc, cta, img }) {
