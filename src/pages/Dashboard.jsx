@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, ShoppingBag, DollarSign, Wallet, Clock, AlertTriangle, Loader2 } from "lucide-react";
+import { Package, ShoppingBag, DollarSign, Wallet, ClipboardList, AlertTriangle, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { formatBRL } from "@/lib/config";
 
@@ -8,7 +8,7 @@ const STAT_CARDS = [
   { key: "ordersToday", label: "Vendas hoje", icon: ShoppingBag, format: (v) => v },
   { key: "revenueToday", label: "Faturamento hoje", icon: DollarSign, format: formatBRL, accent: true },
   { key: "totalRevenue", label: "Faturamento total", icon: Wallet, format: formatBRL },
-  { key: "pendingOrders", label: "Pedidos pendentes", icon: Clock, format: (v) => v },
+  { key: "totalOrders", label: "Total de vendas", icon: ClipboardList, format: (v) => v },
   { key: "lowStock", label: "Estoque baixo", icon: AlertTriangle, format: (v) => v, warn: true },
 ];
 
@@ -145,4 +145,3 @@ function Dashboard() {
 }
 
 export default Dashboard;
-

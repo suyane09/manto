@@ -17,10 +17,6 @@ router.get("/stats", requireAuth, async (req, res) => {
      WHERE date(created_at) = date('now') AND payment_status = 'aprovado'`
   );
 
-  const pendingOrders =
-    (await get("SELECT COUNT(*) as c FROM orders WHERE payment_status IN ('pending', 'pendente', 'em_analise')"))
-      ?.c || 0;
-
   const recentOrders = await all("SELECT * FROM orders ORDER BY created_at DESC LIMIT 5");
 
   const topProducts = await all(`
@@ -40,7 +36,6 @@ router.get("/stats", requireAuth, async (req, res) => {
     totalOrders,
     ordersToday: salesToday?.c || 0,
     revenueToday: salesToday?.v || 0,
-    pendingOrders,
     recentOrders,
     topProducts,
   });

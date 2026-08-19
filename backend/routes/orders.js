@@ -99,6 +99,88 @@ router.get("/", requireAuth, async (req, res) => {
   });
 });
 
+// GET /api/orders/report - relatório de vendas para exportação (protegido)
+// Aceita ?from=&to= (datas no formato usado em created_at). Sem parâmetros,
+// considera todo o histórico. Pedidos cancelados não entram no relatório.
+router.get("/report", requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+
+  const where = ["status != 'cancelado'"];
+  const params = [];
+  if (from) {
+    where.push("created_at >= ?");
+    params.push(from);
+  }
+  if (to) {
+    where.push("created_at <= ?");
+    params.push(to);
+  }
+  const whereSql = `WHERE ${where.join(" AND ")}`;
+
+  const orders = await all(`SELECT * FROM orders ${whereSql} ORDER BY created_at ASC`, params);
+  const ordersWithItems = await withItems(orders);
+
+  const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  const totalItems = ordersWithItems.reduce(
+    (sum, o) => sum + o.items.reduce((s, it) => s + (Number(it.qty) || 0), 0),
+    0
+  );
+
+  const productMap = new Map();
+  const categoryMap = new Map();
+  const productIds = [
+    ...new Set(
+      ordersWithItems.flatMap((o) => o.items.map((it) => it.product_id).filter(Boolean))
+    ),
+  ];
+  const products = productIds.length
+    ? await all(
+        `SELECT id, category FROM products WHERE id IN (${productIds.map(() => "?").join(",")})`,
+        productIds
+      )
+    : [];
+  const categoryByProductId = new Map(products.map((p) => [p.id, p.category || "Sem categoria"]));
+
+  for (const o of ordersWithItems) {
+    for (const it of o.items) {
+      const key = it.product_id ?? it.product_name;
+      const cur = productMap.get(key) || { name: it.product_name, qty: 0, revenue: 0 };
+      cur.qty += Number(it.qty) || 0;
+      cur.revenue += Number(it.subtotal) || 0;
+      productMap.set(key, cur);
+
+      const category = categoryByProductId.get(it.product_id) || "Sem categoria";
+      const curCat = categoryMap.get(category) || { name: category, qty: 0, revenue: 0 };
+      curCat.qty += Number(it.qty) || 0;
+      curCat.revenue += Number(it.subtotal) || 0;
+      categoryMap.set(category, curCat);
+    }
+  }
+  const byProduct = [...productMap.values()].sort((a, b) => b.qty - a.qty);
+  const byCategory = [...categoryMap.values()].sort((a, b) => b.qty - a.qty);
+
+  res.json({
+    period: { from: from || null, to: to || null },
+    summary: {
+      totalOrders: orders.length,
+      totalRevenue,
+      totalItems,
+      topProduct: byProduct[0] || null,
+    },
+    byProduct,
+    byCategory,
+    orders: ordersWithItems.map((o) => ({
+      id: o.id,
+      created_at: o.created_at,
+      customer_name: o.customer_name,
+      status: o.status,
+      payment_method: o.payment_method,
+      total: o.total,
+      itemsCount: o.items.reduce((s, it) => s + (Number(it.qty) || 0), 0),
+    })),
+  });
+});
+
 // GET /api/orders/:id - detalhe (protegido)
 router.get("/:id", requireAuth, async (req, res) => {
   const order = await loadOrder(req.params.id);
