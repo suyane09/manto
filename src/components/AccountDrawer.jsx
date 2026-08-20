@@ -8,30 +8,14 @@ import {
   Phone,
   Loader2,
   LogOut,
-  Package,
   MapPin,
   Pencil,
   ChevronRight,
-  Clock,
-  CheckCircle2,
-  Truck,
-  PackageCheck,
-  XCircle,
   Eye,
   EyeOff,
 } from "lucide-react";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { formatBRL } from "@/lib/config";
 import customerApi from "@/lib/customerApi";
-
-const ORDER_STATUS_LABELS = {
-  aguardando_pagamento: { label: "Aguardando pagamento", color: "text-amber-400" },
-  confirmado: { label: "Confirmado", color: "text-neon" },
-  enviado: { label: "Enviado", color: "text-blue-400" },
-  concluido: { label: "Concluído", color: "text-neon" },
-  cancelado: { label: "Cancelado", color: "text-destructive" },
-  pagamento_recusado: { label: "Pagamento recusado", color: "text-destructive" },
-};
 
 export default function AccountDrawer() {
   const { isAuthenticated, isDrawerOpen, closeDrawer } = useCustomerAuth();
@@ -66,7 +50,7 @@ export default function AccountDrawer() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {mode === "account"
-                    ? "Seus dados e pedidos"
+                    ? "Seus dados"
                     : mode === "register"
                     ? "Crie sua conta"
                     : "Entre para acompanhar seus pedidos"}
@@ -529,21 +513,7 @@ function RegisterForm({ onSwitchToLogin }) {
 }
 
 function AccountPanel() {
-  const { customer, logout, fetchOrders } = useCustomerAuth();
-  const [tab, setTab] = useState("perfil"); // perfil | pedidos
-  const [orders, setOrders] = useState(null);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [ordersError, setOrdersError] = useState("");
-
-  useEffect(() => {
-    if (tab !== "pedidos" || orders !== null) return;
-    setOrdersLoading(true);
-    setOrdersError("");
-    fetchOrders()
-      .then(setOrders)
-      .catch(() => setOrdersError("Não foi possível carregar seus pedidos."))
-      .finally(() => setOrdersLoading(false));
-  }, [tab, orders, fetchOrders]);
+  const { customer, logout } = useCustomerAuth();
 
   return (
     <div className="space-y-5">
@@ -557,35 +527,7 @@ function AccountPanel() {
         </div>
       </div>
 
-      <div className="flex gap-2 border-b border-border">
-        <TabButton active={tab === "perfil"} onClick={() => setTab("perfil")}>
-          Meus dados
-        </TabButton>
-        <TabButton active={tab === "pedidos"} onClick={() => setTab("pedidos")}>
-          Meus pedidos
-        </TabButton>
-      </div>
-
-      {tab === "perfil" ? (
-        <ProfileTab />
-      ) : ordersLoading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-neon" />
-        </div>
-      ) : ordersError ? (
-        <ErrorBox>{ordersError}</ErrorBox>
-      ) : orders && orders.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
-          <Package className="h-10 w-10 opacity-30" />
-          <p className="text-sm">Você ainda não fez nenhum pedido.</p>
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {orders?.map((o) => (
-            <OrderCard key={o.id} order={o} />
-          ))}
-        </ul>
-      )}
+      <ProfileTab />
 
       <button
         onClick={logout}
@@ -595,154 +537,6 @@ function AccountPanel() {
         Sair da conta
       </button>
     </div>
-  );
-}
-
-function TabButton({ active, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`-mb-px border-b-2 px-1 pb-2 text-xs font-bold uppercase tracking-wide transition-colors ${
-        active ? "border-neon text-neon" : "border-transparent text-muted-foreground hover:text-white"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-// Trilha de acompanhamento estilo "onde está meu pedido" (Mercado Livre etc).
-// Passos fixos do fluxo normal - cancelamento/recusa são tratados à parte,
-// como um estado de alerta, já que interrompem o fluxo.
-const TRACKING_STEPS = [
-  { key: "aguardando_pagamento", label: "Pedido recebido", icon: Clock },
-  { key: "confirmado", label: "Pagamento confirmado", icon: CheckCircle2 },
-  { key: "enviado", label: "A caminho", icon: Truck },
-  { key: "concluido", label: "Entregue", icon: PackageCheck },
-];
-
-function OrderTracking({ status }) {
-  if (status === "aguardando_pagamento") {
-    return null;
-  }
-
-  if (status === "cancelado" || status === "pagamento_recusado") {
-    const label = status === "cancelado" ? "Pedido cancelado" : "Pagamento recusado";
-    return (
-      <div className="mt-3 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2">
-        <XCircle className="h-4 w-4 flex-shrink-0 text-destructive" />
-        <p className="text-xs text-destructive">{label}</p>
-      </div>
-    );
-  }
-
-  const currentIndex = Math.max(
-    0,
-    TRACKING_STEPS.findIndex((s) => s.key === status)
-  );
-
-  return (
-    <div className="mt-3">
-      <div className="flex items-start">
-        {TRACKING_STEPS.map((step, i) => {
-          const Icon = step.icon;
-          const done = i < currentIndex;
-          const active = i === currentIndex;
-          const reached = i <= currentIndex;
-          return (
-            <div key={step.key} className="flex flex-1 flex-col items-center last:flex-none last:items-end">
-              <div className="flex w-full items-center">
-                <div
-                  className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                    reached ? "border-neon bg-neon/10 text-neon" : "border-border bg-background text-muted-foreground"
-                  } ${active ? "ring-2 ring-neon/30" : ""}`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                </div>
-                {i < TRACKING_STEPS.length - 1 && (
-                  <div className={`h-0.5 flex-1 ${done || active ? "bg-neon" : "bg-border"}`} />
-                )}
-              </div>
-              <p
-                className={`mt-1.5 max-w-[70px] text-center text-[10px] leading-tight ${
-                  reached ? "font-semibold text-white" : "text-muted-foreground"
-                } ${i === TRACKING_STEPS.length - 1 ? "text-right" : ""}`}
-              >
-                {step.label}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function OrderCard({ order }) {
-  const status = ORDER_STATUS_LABELS[order.status] || { label: order.status, color: "text-white" };
-  const date = order.created_at
-    ? new Date(order.created_at.replace(" ", "T") + "Z").toLocaleString("pt-BR", {
-        timeZone: "America/Sao_Paulo",
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
-  const [retrying, setRetrying] = useState(false);
-  const [retryError, setRetryError] = useState("");
-
-  async function handleRetryPayment() {
-    setRetrying(true);
-    setRetryError("");
-    try {
-      const { data } = await customerApi.post(`/payments/retry/${order.id}`);
-      const redirectUrl = data.initPoint || data.sandboxInitPoint;
-      if (redirectUrl) window.location.href = redirectUrl;
-    } catch (err) {
-      setRetryError(err?.response?.data?.error || "Não foi possível continuar o pagamento.");
-    } finally {
-      setRetrying(false);
-    }
-  }
-
-  return (
-    <li className="rounded-lg border border-border bg-background p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground">Pedido #{order.id}</span>
-        <span className={`text-xs font-bold uppercase ${status.color}`}>{status.label}</span>
-      </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">{date}</p>
-
-      <OrderTracking status={order.status} />
-
-      <ul className="mt-3 space-y-1 border-t border-border pt-2">
-        {order.items?.map((it) => (
-          <li key={it.id} className="text-xs text-white">
-            {it.qty}x {it.product_name}
-            {it.size ? ` (${it.size})` : ""}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-2">
-        <span className="text-xs text-muted-foreground">Total</span>
-        <span className="text-sm font-bold text-neon">{formatBRL(order.total)}</span>
-      </div>
-      {order.status === "aguardando_pagamento" && (
-        <div className="mt-3 border-t border-border pt-3">
-          <button
-            onClick={handleRetryPayment}
-            disabled={retrying}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-neon py-2.5 text-xs font-bold uppercase tracking-wide text-black disabled:opacity-60"
-          >
-            {retrying && <Loader2 className="h-4 w-4 animate-spin" />}
-            Continuar pagamento
-          </button>
-          {retryError && <p className="mt-2 text-center text-xs text-destructive">{retryError}</p>}
-        </div>
-      )}
-    </li>
   );
 }
 
@@ -1013,4 +807,3 @@ function ChangePasswordBox({ changePassword }) {
     </div>
   );
 }
-

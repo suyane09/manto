@@ -165,7 +165,7 @@ router.post("/login", authLimiter, async (req, res) => {
   const normalizedEmail = String(email).trim().toLowerCase();
   const customer = await get("SELECT * FROM customers WHERE email = ?", [normalizedEmail]);
   if (!customer) {
-    return res.status(401).json({ error: "E-mail ou senha inv�lidos." });
+    return res.status(401).json({ error: "E-mail ou senha inválidos." });
   }
 
   if (customer.locked_until && new Date(customer.locked_until) > new Date()) {
