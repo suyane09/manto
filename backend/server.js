@@ -15,7 +15,6 @@ import ordersRoutes from "./routes/orders.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import uploadsRoutes from "./routes/uploads.js";
 import shippingRoutes from "./routes/shipping.js";
-import paymentsRoutes from "./routes/payments.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -77,7 +76,6 @@ export function createApp() {
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/uploads", uploadsRoutes);
   app.use("/api/shipping", shippingRoutes);
-  app.use("/api/payments", paymentsRoutes);
 
   app.get("/api/health", (req, res) => res.json({ ok: true }));
 
