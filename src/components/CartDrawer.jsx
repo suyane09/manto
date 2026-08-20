@@ -32,20 +32,38 @@ export default function CartDrawer() {
     totalPrice,
   } = useCart();
 
-  const { customer, isAuthenticated } = useCustomerAuth();
+  const { customer, isAuthenticated, openDrawer } = useCustomerAuth();
 
   const [step, setStep] = useState(STEPS.CART);
 
   const [form, setForm] = useState({
-    name: isAuthenticated ? customer?.name || "" : "",
-    phone: isAuthenticated ? customer?.phone || "" : "",
-    street: isAuthenticated ? customer?.street || "" : "",
-    number: isAuthenticated ? customer?.number || "" : "",
-    complement: isAuthenticated ? customer?.complement || "" : "",
-    neighborhood: isAuthenticated ? customer?.neighborhood || "" : "",
-    city: isAuthenticated ? customer?.city || "" : "",
-    uf: isAuthenticated ? customer?.uf || "" : "",
+    name: "",
+    phone: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    city: "",
+    uf: "",
   });
+
+  // Mantém os dados do formulário sincronizados com a conta do cliente.
+  // Roda de novo sempre que o login mudar (ex: cliente loga com o carrinho
+  // já aberto) ou os dados cadastrais forem atualizados.
+  React.useEffect(() => {
+    if (isAuthenticated && customer) {
+      setForm({
+        name: customer.name || "",
+        phone: customer.phone || "",
+        street: customer.street || "",
+        number: customer.number || "",
+        complement: customer.complement || "",
+        neighborhood: customer.neighborhood || "",
+        city: customer.city || "",
+        uf: customer.uf || "",
+      });
+    }
+  }, [isAuthenticated, customer]);
 
   function resetCheckout() {
     setStep(STEPS.CART);
@@ -315,11 +333,19 @@ export default function CartDrawer() {
 
                 {step === STEPS.CART && (
                   <button
-                    onClick={() => setStep(STEPS.DETAILS)}
+                    onClick={() => {
+                      // Só deixa avançar pro checkout se o cliente tiver conta.
+                      // Sem login, abre a gaveta de login/cadastro em vez de seguir.
+                      if (!isAuthenticated) {
+                        openDrawer();
+                        return;
+                      }
+                      setStep(STEPS.DETAILS);
+                    }}
                     className="flex w-full items-center justify-center gap-2 rounded-md bg-neon py-4 font-black uppercase tracking-wide text-black transition-transform hover:scale-[1.01] active:scale-95"
                   >
                     <MessageCircle className="h-5 w-5" />
-                    Finalizar pelo WhatsApp
+                    {isAuthenticated ? "Finalizar pelo WhatsApp" : "Entrar para finalizar"}
                   </button>
                 )}
 
