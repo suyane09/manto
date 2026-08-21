@@ -30,9 +30,6 @@ export default function AboutSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-neon">
-              Est. 2020
-            </p>
             <h2 className="mt-2 font-heading text-3xl uppercase tracking-wide text-white sm:text-5xl">
               Mais que uma camisa.
               <br />
@@ -43,7 +40,6 @@ export default function AboutSection() {
               vestimos em campo. Reunimos camisas e chuteiras de alta qualidade,
               a pronta entrega ou sob encomenda, para que você vista sua paixão
               com orgulho — dentro e fora das quatro linhas.
-            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {features.map((f) => (
@@ -57,7 +53,6 @@ export default function AboutSection() {
                 </h3>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {f.desc}
-                </p>
               </div>
             ))}
           </div>

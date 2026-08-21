@@ -22,7 +22,7 @@ export default function Footer() {
                   {STORE_NAME}
                 </p>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-neon">
-                  Sport's Club · Est. 2020
+                  Sport's Club
                 </p>
               </div>
             </div>
