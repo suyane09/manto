@@ -40,6 +40,7 @@ export default function AboutSection() {
               vestimos em campo. Reunimos camisas e chuteiras de alta qualidade,
               a pronta entrega ou sob encomenda, para que você vista sua paixão
               com orgulho — dentro e fora das quatro linhas.
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             {features.map((f) => (
@@ -53,6 +54,7 @@ export default function AboutSection() {
                 </h3>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {f.desc}
+                </p>
               </div>
             ))}
           </div>
