@@ -38,8 +38,33 @@ export function createApp() {
       // não se aplica e pode ser desligada sem risco.
       contentSecurityPolicy: false,
       crossOriginResourcePolicy: { policy: "cross-origin" },
+      // Manda o navegador sempre usar HTTPS neste domínio pelo próximo ano,
+      // mesmo que alguém digite ou clique num link "http://" por engano -
+      // fecha a brecha de um atacante interceptar a primeira requisição em
+      // texto puro antes do redirecionamento acontecer.
+      hsts: { maxAge: 31536000, includeSubDomains: true },
     })
   );
+
+  // Redireciona qualquer requisição em HTTP puro pra HTTPS. Só entra em ação
+  // em produção - em dev local (http://localhost) isso quebraria o fluxo.
+  // Depende de "trust proxy" acima pra enxergar o protocolo original quando
+  // o servidor está atrás de um proxy/load balancer (Render, Railway etc.).
+  //
+  // Ignora localhost/127.0.0.1 mesmo com NODE_ENV=production: é comum testar
+  // localmente com essa variável setada (pra checar as travas de produção),
+  // e como não existe certificado HTTPS rodando na própria máquina, redirecionar
+  // localhost pra https:// só quebraria os testes sem nenhum ganho de segurança.
+  if (process.env.NODE_ENV === "production") {
+    app.use((req, res, next) => {
+      const host = (req.headers.host || "").split(":")[0];
+      const isLocalhost = host === "localhost" || host === "127.0.0.1";
+      if (isLocalhost || req.secure || req.headers["x-forwarded-proto"] === "https") {
+        return next();
+      }
+      return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+    });
+  }
 
   app.use(
     cors({
@@ -92,6 +117,22 @@ export function createApp() {
 }
 
 async function start() {
+  // Em produção, exige ALLOWED_ORIGINS (ou FRONTEND_URL) configurado. Sem essa
+  // variável, o CORS acima cai no modo "dev sem config" e libera QUALQUER site
+  // pra chamar a API - ou seja, qualquer página na internet poderia fazer
+  // requisições autenticadas pro backend usando o navegador de um cliente
+  // logado. Isso não pode acontecer silenciosamente em produção.
+  if (
+    process.env.NODE_ENV === "production" &&
+    !(process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL)
+  ) {
+    throw new Error(
+      "ALLOWED_ORIGINS (ou FRONTEND_URL) não configurado em produção. Defina a " +
+        "URL do site em backend/.env (ex: ALLOWED_ORIGINS=https://seudominio.com.br) " +
+        "antes de subir o servidor - sem isso, o CORS libera qualquer origem."
+    );
+  }
+
   // Em produção, exige DATABASE_URL configurado. Sem essa checagem, se a
   // variável faltar por engano no deploy, o backend não quebra - ele volta
   // sozinho a usar o SQLite local (db.js escolhe o modo com base nela), o

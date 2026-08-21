@@ -3,12 +3,17 @@ import { Plus, Zap, PencilRuler, ChevronLeft, ChevronRight } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/context/CartContext";
 import { formatBRL } from "@/lib/config";
+import { normalizeSizes } from "@/lib/sizes";
 
 export default function ProductCard({ product }) {
   const [size, setSize] = useState(null);
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
   const [photoIndex, setPhotoIndex] = useState(0);
+  const sizeGroups = normalizeSizes(product.sizes);
+  const hasMultipleLines = sizeGroups.length > 1;
+  const [activeGroupKey, setActiveGroupKey] = useState(sizeGroups[0]?.key ?? null);
+  const activeGroup = sizeGroups.find((g) => g.key === activeGroupKey) ?? sizeGroups[0];
   const { addItem } = useCart();
   const { toast } = useToast();
   const isCustom = product.type === "encomenda";
@@ -47,6 +52,7 @@ export default function ProductCard({ product }) {
       id: product.id,
       name: product.name,
       size,
+      line: hasMultipleLines ? activeGroup?.label : null,
       price: product.price,
       image: images[0],
       category: product.category,
@@ -56,7 +62,7 @@ export default function ProductCard({ product }) {
     });
     toast({
       title: "Adicionado ao pedido",
-      description: `${product.name} • ${size}`,
+      description: `${product.name} • ${hasMultipleLines && activeGroup ? `${activeGroup.label} ` : ""}${size}`,
     });
   };
 
@@ -140,38 +146,66 @@ export default function ProductCard({ product }) {
           </span>
         </div>
 
-        <div>
-          <p className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
-            Tamanho
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {product.sizes.map((s) => {
-              const unavail = product.unavailable?.includes(s);
-              const selected = size === s;
-              return (
-                <button
-                  key={s}
-                  disabled={unavail}
-                  onClick={() => setSize(s)}
-                  className={`relative min-w-10 rounded-md border px-3 py-2 text-sm font-bold transition-all ${
-                    unavail
-                      ? "cursor-not-allowed border-border/50 text-muted-foreground/40"
-                      : selected
-                      ? "border-neon bg-neon text-black"
-                      : "border-border text-white hover:border-neon"
-                  }`}
-                >
-                  {s}
-                  {unavail && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <span className="h-px w-full rotate-[-20deg] bg-muted-foreground/60" />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+        {sizeGroups.length > 0 && (
+          <div>
+            {hasMultipleLines && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {sizeGroups.map((g) => {
+                  const activeTab = g.key === activeGroup?.key;
+                  return (
+                    <button
+                      key={g.key}
+                      type="button"
+                      onClick={() => {
+                        setActiveGroupKey(g.key);
+                        setSize(null);
+                      }}
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                        activeTab
+                          ? "border-neon bg-neon text-black"
+                          : "border-border text-muted-foreground hover:border-neon hover:text-white"
+                      }`}
+                    >
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {!hasMultipleLines && (
+              <p className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+                {activeGroup?.label}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {activeGroup?.sizes.map((s) => {
+                const unavail = product.unavailable?.includes(s);
+                const selected = size === s;
+                return (
+                  <button
+                    key={s}
+                    disabled={unavail}
+                    onClick={() => setSize(s)}
+                    className={`relative min-w-10 rounded-md border px-3 py-2 text-sm font-bold transition-all ${
+                      unavail
+                        ? "cursor-not-allowed border-border/50 text-muted-foreground/40"
+                        : selected
+                        ? "border-neon bg-neon text-black"
+                        : "border-border text-white hover:border-neon"
+                    }`}
+                  >
+                    {s}
+                    {unavail && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="h-px w-full rotate-[-20deg] bg-muted-foreground/60" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {isCustom && (
           <div className="space-y-2">

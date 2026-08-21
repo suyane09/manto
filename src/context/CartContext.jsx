@@ -3,7 +3,7 @@ import React, { createContext, useContext, useMemo, useState, useCallback } from
 const CartContext = createContext(null);
 
 function makeKey(item) {
-  return [item.id, item.size, item.customName, item.customNumber]
+  return [item.id, item.line, item.size, item.customName, item.customNumber]
     .filter(Boolean)
     .join("::");
 }

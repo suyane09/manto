@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Plus, Pencil, Trash2, X, Search, Loader2, ImagePlus, ImageOff, TriangleAlert } from "lucide-react";
 import api from "@/lib/api";
 import { formatBRL } from "@/lib/config";
+import { sizesToFormStrings, formStringsToSizes } from "@/lib/sizes";
 
 const emptyForm = {
   id: "",
@@ -9,7 +10,9 @@ const emptyForm = {
   category: "manto",
   type: "pronta",
   price: "",
-  sizes: "P,M,G,GG",
+  sizesTorcedor: "P,M,G,GG",
+  sizesJogador: "",
+  sizesInfantil: "",
   stock: 10,
   images: [],
 };
@@ -63,7 +66,7 @@ function Produtos() {
       category: p.category || "",
       type: p.type || "",
       price: p.price,
-      sizes: (p.sizes || []).join(","),
+      ...sizesToFormStrings(p.sizes),
       stock: p.stock,
       images: p.images || [],
     });
@@ -105,7 +108,7 @@ function Produtos() {
       category: form.category,
       type: form.type,
       price: Number(form.price),
-      sizes: form.sizes.split(",").map((s) => s.trim()).filter(Boolean),
+      sizes: formStringsToSizes(form),
       stock: Number(form.stock),
       images: form.images,
     };
@@ -373,13 +376,40 @@ function Produtos() {
                 />
               </Field>
 
-              <Field label="Tamanhos (separados por vírgula)">
-                <input
-                  className="input"
-                  value={form.sizes}
-                  onChange={(e) => setForm({ ...form, sizes: e.target.value })}
-                />
-              </Field>
+              <div>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Tamanhos por linha
+                </p>
+                <p className="mb-3 text-[11px] text-muted-foreground">
+                  Preencha só as linhas que esse produto tem. As vazias não aparecem pro cliente.
+                </p>
+                <div className="space-y-3">
+                  <Field label="Torcedor (separados por vírgula)">
+                    <input
+                      className="input"
+                      placeholder="P,M,G,GG"
+                      value={form.sizesTorcedor}
+                      onChange={(e) => setForm({ ...form, sizesTorcedor: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Jogador (separados por vírgula)">
+                    <input
+                      className="input"
+                      placeholder="P,M,G,GG"
+                      value={form.sizesJogador}
+                      onChange={(e) => setForm({ ...form, sizesJogador: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Infantil (separados por vírgula)">
+                    <input
+                      className="input"
+                      placeholder="2,4,6,8,10,12,14,16"
+                      value={form.sizesInfantil}
+                      onChange={(e) => setForm({ ...form, sizesInfantil: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              </div>
 
               <Field label="Estoque">
                 <input

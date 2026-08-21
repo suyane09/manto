@@ -4,7 +4,7 @@ export const STORE_NAME = "Arsenal do Manto";
 export const LOGO_URL = "/logo-square.png";
 
 // WhatsApp number in international format (no + or spaces), used for order requests
-export const WHATSAPP_NUMBER = "5582982143150";
+export const WHATSAPP_NUMBER = "5582996270952";
 
 export const INSTAGRAM_URL = "https://www.instagram.com/arsenaldomanto?igsh=c3ZlM21rZnl3OQ==";
 

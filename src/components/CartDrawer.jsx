@@ -81,7 +81,7 @@ export default function CartDrawer() {
     lines.push("");
 
     items.forEach((it) => {
-      let line = `• ${it.qty}x ${it.name} (Tam: ${it.size})`;
+      let line = `• ${it.qty}x ${it.name} (${it.line ? `${it.line} - ` : ""}Tam: ${it.size})`;
       if (it.customName) {
         line += ` - ${it.customName}${it.customNumber ? " #" + it.customNumber : ""}`;
       }
@@ -201,7 +201,7 @@ export default function CartDrawer() {
                           </button>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Tam: {it.size}
+                          {it.line ? `${it.line} · ` : ""}Tam: {it.size}
                           {it.customName
                             ? ` · ${it.customName}${it.customNumber ? " #" + it.customNumber : ""}`
                             : ""}
