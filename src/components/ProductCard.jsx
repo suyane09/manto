@@ -69,7 +69,7 @@ export default function ProductCard({ product }) {
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-neon/50">
       <div
-        className="relative aspect-[4/5] overflow-hidden bg-gunmetal"
+        className="relative aspect-[4/3] overflow-hidden bg-gunmetal sm:aspect-[4/5]"
         style={{
           clipPath:
             "polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)",
@@ -136,7 +136,7 @@ export default function ProductCard({ product }) {
         </p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 p-4">
+      <div className="flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">
             {product.category === "manto" ? "Manto" : "Chuteira"}
@@ -228,7 +228,7 @@ export default function ProductCard({ product }) {
 
         <button
           onClick={handleAdd}
-          className="mt-auto inline-flex items-center justify-center gap-2 rounded-md bg-neon py-3 text-sm font-black uppercase tracking-wide text-black transition-transform hover:scale-[1.02] active:scale-95"
+          className="mt-auto inline-flex items-center justify-center gap-2 rounded-md bg-neon py-2.5 text-sm font-black uppercase tracking-wide text-black transition-transform hover:scale-[1.02] active:scale-95 sm:py-3"
         >
           <Plus className="h-4 w-4" /> Adicionar ao Pedido
         </button>
