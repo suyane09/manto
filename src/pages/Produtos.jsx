@@ -187,90 +187,153 @@ function Produtos() {
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-white/[0.02] text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-5 py-3.5 text-left font-semibold">Produto</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Categoria</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Tipo</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Preço</th>
-                <th className="px-5 py-3.5 text-left font-semibold">Estoque</th>
-                <th className="px-5 py-3.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id} className="border-b border-border/60 last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      {p.images?.[0] ? (
-                        <img
-                          src={p.images[0]}
-                          alt={p.name}
-                          className="h-10 w-10 rounded-lg border border-border object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
-                          <ImageOff className="h-4 w-4" />
+        <>
+          {/* Mobile: card list (screens < sm) */}
+          <div className="space-y-3 sm:hidden">
+            {filtered.map((p) => (
+              <div key={p.id} className="rounded-2xl border border-border bg-card p-4">
+                <div className="flex items-start gap-3">
+                  {p.images?.[0] ? (
+                    <img
+                      src={p.images[0]}
+                      alt={p.name}
+                      className="h-14 w-14 shrink-0 rounded-lg border border-border object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+                      <ImageOff className="h-4 w-4" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-white">{p.name}</p>
+                    <p className="mt-0.5 text-xs capitalize text-muted-foreground">
+                      {p.category} · {p.type}
+                    </p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-white">{formatBRL(p.price)}</span>
+                      <span
+                        className={`text-xs font-semibold ${
+                          p.stock <= 3 ? "text-destructive" : "text-muted-foreground"
+                        }`}
+                      >
+                        Estoque: {p.stock}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2 border-t border-border/60 pt-3">
+                  <button
+                    onClick={() => openEdit(p)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-neon hover:text-neon"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="rounded-2xl border border-border bg-card px-5 py-10 text-center text-muted-foreground">
+                Nenhum produto encontrado.
+              </div>
+            )}
+          </div>
+
+          {/* Tablet/desktop: table (screens >= sm) */}
+          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card sm:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-white/[0.02] text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-5 py-3.5 text-left font-semibold">Produto</th>
+                    <th className="px-5 py-3.5 text-left font-semibold">Categoria</th>
+                    <th className="px-5 py-3.5 text-left font-semibold">Tipo</th>
+                    <th className="px-5 py-3.5 text-left font-semibold">Preço</th>
+                    <th className="px-5 py-3.5 text-left font-semibold">Estoque</th>
+                    <th className="px-5 py-3.5"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p) => (
+                    <tr key={p.id} className="border-b border-border/60 last:border-0 hover:bg-white/[0.02]">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          {p.images?.[0] ? (
+                            <img
+                              src={p.images[0]}
+                              alt={p.name}
+                              className="h-10 w-10 rounded-lg border border-border object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+                              <ImageOff className="h-4 w-4" />
+                            </div>
+                          )}
+                          <span className="font-medium text-white">{p.name}</span>
                         </div>
-                      )}
-                      <span className="font-medium text-white">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 capitalize text-muted-foreground">{p.category}</td>
-                  <td className="px-5 py-3.5 capitalize text-muted-foreground">{p.type}</td>
-                  <td className="px-5 py-3.5 text-white">{formatBRL(p.price)}</td>
-                  <td className="px-5 py-3.5">
-                    <span
-                      className={`font-semibold ${
-                        p.stock <= 3 ? "text-destructive" : "text-white"
-                      }`}
-                    >
-                      {p.stock}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:border-neon hover:text-neon"
-                        aria-label="Editar"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p)}
-                        className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
-                        aria-label="Excluir"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-muted-foreground">
-                    Nenhum produto encontrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="px-5 py-3.5 capitalize text-muted-foreground">{p.category}</td>
+                      <td className="px-5 py-3.5 capitalize text-muted-foreground">{p.type}</td>
+                      <td className="px-5 py-3.5 text-white">{formatBRL(p.price)}</td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`font-semibold ${
+                            p.stock <= 3 ? "text-destructive" : "text-white"
+                          }`}
+                        >
+                          {p.stock}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => openEdit(p)}
+                            className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:border-neon hover:text-neon"
+                            aria-label="Editar"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p)}
+                            className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                            aria-label="Excluir"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-5 py-10 text-center text-muted-foreground">
+                        Nenhum produto encontrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
 
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
           onClick={() => setShowForm(false)}
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={handleSave}
-            className="flex max-h-[90vh] w-full max-w-md flex-col overflow-y-auto rounded-2xl border border-border bg-card p-7"
+            className="flex max-h-[90vh] w-full max-w-md flex-col overflow-y-auto rounded-2xl border border-border bg-card p-5 sm:p-7"
           >
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-heading text-base uppercase tracking-wide text-white">
@@ -444,12 +507,12 @@ function Produtos() {
 
       {deleteTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
           onClick={() => !deleting && setDeleteTarget(null)}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl border border-destructive/30 bg-card p-7"
+            className="w-full max-w-sm rounded-2xl border border-destructive/30 bg-card p-5 sm:p-7"
           >
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
