@@ -163,7 +163,7 @@ function Produtos() {
             placeholder="Buscar por nome ou categoria..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-muted-foreground focus:border-neon focus:outline-none"
+            className="w-full rounded-lg border border-border bg-card py-2.5 pl-9 pr-3 text-base text-white placeholder:text-muted-foreground focus:border-neon focus:outline-none sm:text-sm"
           />
         </div>
 

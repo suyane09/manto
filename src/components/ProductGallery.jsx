@@ -70,7 +70,7 @@ export default function ProductGallery() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nome (ex: Phantom, Vapor...)"
-            className="w-full bg-transparent text-sm text-white placeholder:text-muted-foreground focus:outline-none"
+            className="w-full bg-transparent text-base text-white placeholder:text-muted-foreground focus:outline-none sm:text-sm"
           />
           {search && (
             <button

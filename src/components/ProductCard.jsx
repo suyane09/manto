@@ -214,14 +214,14 @@ export default function ProductCard({ product }) {
               onChange={(e) => setName(e.target.value)}
               placeholder="Nome (personalização)"
               maxLength={12}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm font-semibold uppercase tracking-wider text-white placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground/60 focus:border-neon focus:outline-none"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-base font-semibold uppercase tracking-wider text-white placeholder:normal-case placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground/60 focus:border-neon focus:outline-none sm:text-sm"
             />
             <input
               value={number}
               onChange={(e) => setNumber(e.target.value)}
               placeholder="Número (opcional)"
               maxLength={3}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-white placeholder:text-muted-foreground/60 focus:border-neon focus:outline-none"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-base text-white placeholder:text-muted-foreground/60 focus:border-neon focus:outline-none sm:text-sm"
             />
           </div>
         )}

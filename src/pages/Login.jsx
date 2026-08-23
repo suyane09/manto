@@ -52,7 +52,7 @@ function Login() {
             <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 focus-within:border-neon">
               <User className="h-4 w-4 text-muted-foreground" />
               <input
-                className="w-full bg-transparent py-2.5 text-sm text-white outline-none"
+                className="w-full bg-transparent py-2.5 text-base text-white outline-none sm:text-sm"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
@@ -69,7 +69,7 @@ function Login() {
               <Lock className="h-4 w-4 text-muted-foreground" />
               <input
                 type="password"
-                className="w-full bg-transparent py-2.5 text-sm text-white outline-none"
+                className="w-full bg-transparent py-2.5 text-base text-white outline-none sm:text-sm"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
