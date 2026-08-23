@@ -47,9 +47,9 @@ export default function ProductGallery() {
 
   return (
     <section id="produtos" className="relative overflow-hidden py-20 sm:py-28">
-      <div className="pointer-events-none absolute inset-x-0 top-8 select-none text-center font-heading text-[22vw] uppercase leading-none text-white/[0.025]">
-        ARSENAL
-      </div>
+      <div className="pointer-events-none absolute inset-x-0 top-8 select-none text-center font-heading text-[28vw] uppercase leading-none text-white/[0.05] sm:text-[22vw] sm:text-white/[0.025]">
+  ARSENAL
+</div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <header className="mb-10 text-center">
