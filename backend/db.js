@@ -384,8 +384,8 @@ async function seedAdmin() {
   const count = res?.c ?? 0;
   if (count > 0) return;
 
-  const username = process.env.ADMIN_USERNAME || "admin";
-  const password = process.env.ADMIN_PASSWORD || "admin123";
+  const username = process.env.ADMIN_USERNAME || "Arsenal";
+  const password = process.env.ADMIN_PASSWORD || "Sportclubarsenal";
   const hash = bcrypt.hashSync(password, 10);
   await run("INSERT INTO admins (username, password_hash) VALUES (?, ?)", [username, hash]);
   console.log(`Admin padr�o criado -> usu�rio: "${username}" (senha definida no .env)`);
